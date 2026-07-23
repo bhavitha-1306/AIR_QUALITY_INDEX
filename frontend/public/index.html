@@ -742,6 +742,12 @@
                 </div>
 
                 <div class="form-group input-with-icon">
+                    <label for="signup-username">Username</label>
+                    <i class="fas fa-at input-icon"></i>
+                    <input type="text" id="signup-username" required minlength="4" placeholder="Choose a username">
+                </div>
+
+                <div class="form-group input-with-icon">
                     <label for="signup-email">Email Address</label>
                     <i class="fas fa-envelope input-icon"></i>
                     <input type="email" id="signup-email" required placeholder="Enter your email">
@@ -842,205 +848,53 @@
             strengthText.textContent = status;
         });
 
-        // Local Storage based authentication
-        document.getElementById('signin-form').addEventListener('submit', function(e) {
+        // =============== API Base URL ===============
+        const API_URL = 'http://localhost:3000';
+        const strengthFill = document.querySelector('.strength-fill');
+
+        // =============== SIGNIN FORM (MongoDB) ===============
+        document.getElementById('signin-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             const email = document.getElementById('signin-email').value;
             const password = document.getElementById('signin-password').value;
             const messageEl = document.getElementById('signin-message');
 
-            // Get users from localStorage
-            const users = JSON.parse(localStorage.getItem('users')) || [];
-            const user = users.find(u => u.email === email && u.password === password);
-
-            if (user) {
-                messageEl.className = 'message success';
-                messageEl.textContent = 'Login successful!';
-                messageEl.style.display = 'block';
-                
-                // Store current user session
-                localStorage.setItem('currentUser', JSON.stringify({
-                    name: user.name,
-                    email: user.email,
-                    loginTime: new Date().toISOString()
-                }));
-
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1000);
-            } else {
-                messageEl.className = 'message error';
-                messageEl.textContent = 'Invalid email or password';
-                messageEl.style.display = 'block';
-            }
-        });
-
-        document.getElementById('signup-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const name = document.getElementById('signup-name').value;
-            const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value;
-            const messageEl = document.getElementById('signup-message');
-
-            // Get existing users or initialize empty array
-            const users = JSON.parse(localStorage.getItem('users')) || [];
-
-            // Check if email already exists
-            if (users.some(user => user.email === email)) {
-                messageEl.className = 'message error';
-                messageEl.textContent = 'Email already registered';
-                messageEl.style.display = 'block';
-                return;
-            }
-
-            // Add new user
-            users.push({
-                name,
-                email,
-                password,
-                createdAt: new Date().toISOString()
-            });
-
-            // Save updated users array
-            localStorage.setItem('users', JSON.stringify(users));
-
-            messageEl.className = 'message success';
-            messageEl.textContent = 'Account created successfully!';
-            messageEl.style.display = 'block';
-
-            // Reset form and switch to login
-            setTimeout(() => {
-                document.querySelector('.container').classList.remove('signup-mode');
-                this.reset();
-                document.querySelector('.strength-fill').style.width = '0';
-            }, 2000);
-        });
-
-        // Google Sign In
-        document.querySelectorAll('.google-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                // Implement Google Sign In logic here
-                console.log('Google Sign In clicked');
-            });
-        });
-
-        // =============== Password Visibility ===============
-        document.querySelectorAll('.show-password').forEach(icon => {
-            icon.addEventListener('click', function() {
-                const targetId = this.getAttribute('data-target');
-                const passwordInput = document.getElementById(targetId);
-                
-                if (passwordInput.type === 'password') {
-                    passwordInput.type = 'text';
-                    this.classList.remove('fa-eye-slash');
-                    this.classList.add('fa-eye');
-                } else {
-                    passwordInput.type = 'password';
-                    this.classList.remove('fa-eye');
-                    this.classList.add('fa-eye-slash');
-                }
-            });
-        });
-
-        // =============== Input Validation UI ===============
-        const signupInputs = ['name', 'signup-username', 'email', 'signup-password'];
-        const strengthFill = document.querySelector('.strength-fill');
-
-        signupInputs.forEach(id => {
-            const input = document.getElementById(id);
-            input.addEventListener('input', function() {
-                const wrapper = this.parentElement;
-                if (this.validity.valid && this.value.length >= (this.minLength || 1)) {
-                    wrapper.classList.add('valid');
-                } else {
-                    wrapper.classList.remove('valid');
-                }
-            });
-        });
-
-        document.getElementById('signup-password').addEventListener('input', function() {
-            const password = this.value;
-            let strength = 0;
-            if (password.length >= 6) strength += 25;
-            if (password.length >= 10) strength += 25;
-            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength += 25;
-            if (/[0-9]/.test(password) && /[^a-zA-Z0-9]/.test(password)) strength += 25;
-            strengthFill.style.width = strength + '%';
-            if (strength <= 25) strengthFill.style.background = '#f44336';
-            else if (strength <= 50) strengthFill.style.background = '#ff9800';
-            else if (strength <= 75) strengthFill.style.background = '#ffc107';
-            else strengthFill.style.background = '#4caf50';
-        });
-
-        // =============== API URL ===============
-        // API_URL already defined above
-
-        // =============== LOGIN FORM ===============
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const username = document.getElementById('login-username').value;
-            const password = document.getElementById('login-password').value;
-            const messageEl = document.getElementById('loginMessage');
-
-            if (!username || !password) {
-                messageEl.className = 'message error';
-                messageEl.textContent = 'Please enter username and password.';
-                messageEl.style.display = 'block';
-                return;
-            }
-
             try {
                 const response = await fetch(`${API_URL}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ username: email, password })
                 });
-
                 const data = await response.json();
 
                 if (response.ok) {
                     messageEl.className = 'message success';
-                    messageEl.textContent = 'Login successful!';
+                    messageEl.textContent = 'Login successful! Redirecting...';
                     messageEl.style.display = 'block';
-
-                    // Store user info
                     sessionStorage.setItem('currentUser', JSON.stringify(data.user));
                     sessionStorage.setItem('lastLogin', new Date().toLocaleString());
-
-                    // Redirect after success
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 1000);
+                    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1000);
                 } else {
                     messageEl.className = 'message error';
-                    messageEl.textContent = data.message || 'Login failed';
+                    messageEl.textContent = data.message || 'Invalid email or password';
                     messageEl.style.display = 'block';
                 }
             } catch (error) {
                 console.error('Login error:', error);
                 messageEl.className = 'message error';
-                messageEl.textContent = 'Network error. Please try again.';
+                messageEl.textContent = 'Network error. Is the server running?';
                 messageEl.style.display = 'block';
             }
         });
 
-        // =============== SIGNUP FORM ===============
-        document.getElementById('signupForm').addEventListener('submit', async function(e) {
+        // =============== SIGNUP FORM (MongoDB) ===============
+        document.getElementById('signup-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
-            const name = document.getElementById('name').value;
+            const name = document.getElementById('signup-name').value;
             const username = document.getElementById('signup-username').value;
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('signup-email').value;
             const password = document.getElementById('signup-password').value;
-            const messageEl = document.getElementById('signupMessage');
-
-            if (!name || !username || !email || !password) {
-                messageEl.className = 'message error';
-                messageEl.textContent = 'Please fill in all fields.';
-                messageEl.style.display = 'block';
-                return;
-            }
+            const messageEl = document.getElementById('signup-message');
 
             try {
                 const response = await fetch(`${API_URL}/api/auth/signup`, {
@@ -1048,20 +902,16 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, username, email, password })
                 });
-
                 const data = await response.json();
 
                 if (response.ok) {
                     messageEl.className = 'message success';
-                    messageEl.textContent = 'Sign up successful! You can now log in.';
+                    messageEl.textContent = 'Account created! You can now sign in.';
                     messageEl.style.display = 'block';
-
-                    // Reset form after success
                     setTimeout(() => {
+                        document.querySelector('.container').classList.remove('signup-mode');
                         this.reset();
-                        document.querySelectorAll('.wrapper').forEach(w => w.classList.remove('valid'));
-                        strengthFill.style.width = '0';
-                        toggleToLogin(); // Switch to login
+                        if (strengthFill) strengthFill.style.width = '0';
                     }, 2000);
                 } else {
                     messageEl.className = 'message error';
@@ -1071,44 +921,7 @@
             } catch (error) {
                 console.error('Signup error:', error);
                 messageEl.className = 'message error';
-                messageEl.textContent = 'Network error. Please try again.';
-                messageEl.style.display = 'block';
-            }
-        });
-
-        // =============== FORGOT PASSWORD ===============
-        document.getElementById('forgotPassword').addEventListener('click', async function(e) {
-            e.preventDefault();
-            const username = prompt('Please enter your username or email:');
-            if (!username) return;
-
-            const messageEl = document.getElementById('loginMessage');
-
-            try {
-                const response = await fetch(`${API_URL}/api/auth/forgot-password`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    messageEl.className = 'message success';
-                    messageEl.textContent = data.message || 'Password reset link sent!';
-                } else {
-                    messageEl.className = 'message error';
-                    messageEl.textContent = data.message || 'Account not found';
-                }
-                messageEl.style.display = 'block';
-
-                setTimeout(() => {
-                    messageEl.style.display = 'none';
-                }, 3000);
-            } catch (error) {
-                console.error('Forgot password error:', error);
-                messageEl.className = 'message error';
-                messageEl.textContent = 'Network error. Please try again.';
+                messageEl.textContent = 'Network error. Is the server running?';
                 messageEl.style.display = 'block';
             }
         });
