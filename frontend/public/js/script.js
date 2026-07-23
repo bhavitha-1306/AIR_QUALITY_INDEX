@@ -83,8 +83,8 @@ function() {
   }, 1500)
 });
 
-// API Base URL
-const API_URL = 'http://localhost:3000';
+// API Base URL — works on localhost AND Vercel automatically
+const API_URL = window.location.origin;
 
 // Signup Logic with MongoDB
 const signupForm = d.getElementById('signupForm');
